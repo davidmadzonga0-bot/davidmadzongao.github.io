@@ -110,6 +110,8 @@ def format_config_status(config: AppConfig) -> str:
             f"- Email poll: {config.email_poll_seconds}s",
             "",
             "Diagnostics:",
+            "- personal-agents setup-telegram",
+            "- personal-agents chat",
             "- personal-agents test-email",
             "- personal-agents test-llm",
         ]

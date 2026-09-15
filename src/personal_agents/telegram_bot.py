@@ -30,7 +30,11 @@ def build_workers(*, bus: AgentBus, config: AppConfig) -> list:
 
 def run_telegram_bot(config: AppConfig) -> None:
     if not config.telegram_bot_token:
-        raise RuntimeError("TELEGRAM_BOT_TOKEN is required to run the Telegram bot.")
+        raise RuntimeError(
+            "TELEGRAM_BOT_TOKEN is required to run the Telegram bot. "
+            "Run: python -m personal_agents.cli setup-telegram "
+            "(or use local chat: python -m personal_agents.cli chat)"
+        )
 
     try:
         from telegram import Update

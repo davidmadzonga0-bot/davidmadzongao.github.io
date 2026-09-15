@@ -105,10 +105,33 @@ Uses UTC. Leave blank to disable.
 ```powershell
 python -m personal_agents.cli init-db
 python -m personal_agents.cli check-config
+```
+
+### 1. Configure Telegram (required for the bot)
+
+```powershell
+python -m personal_agents.cli setup-telegram
+```
+
+That walks you through BotFather token + optional chat id and writes them into `.env`.
+
+Then:
+
+```powershell
 python -m personal_agents.cli run-bot
 ```
 
 Or use `.\run_bot.cmd`.
+
+### 2. Use agents without Telegram (works now)
+
+If Telegram is not set up yet, run a local terminal chat with the same Main + specialist agents:
+
+```powershell
+python -m personal_agents.cli chat
+```
+
+Examples inside local chat: `/weather`, `/agents`, `Help me plan my science project`.
 
 ## Telegram Commands
 

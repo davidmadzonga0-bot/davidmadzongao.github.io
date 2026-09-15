@@ -8,6 +8,8 @@ from personal_agents.agents.orchestrator import MainAgent
 from personal_agents.bus import AgentBus
 from personal_agents.config import format_config_status, load_config
 from personal_agents.diagnostics import test_email_connection, test_llm_connection
+from personal_agents.local_chat import run_local_chat
+from personal_agents.setup_telegram import setup_telegram_interactive
 from personal_agents.telegram_bot import agent_summary, run_telegram_bot, run_workers
 
 
@@ -19,6 +21,8 @@ def main() -> None:
             "init-db",
             "run-bot",
             "run-workers",
+            "chat",
+            "setup-telegram",
             "agents",
             "status",
             "report",
@@ -51,6 +55,16 @@ def main() -> None:
 
     if args.command == "check-config":
         print(format_config_status(config))
+        if not config.has_telegram:
+            print(
+                "\nTelegram is not configured yet.\n"
+                "Run: python -m personal_agents.cli setup-telegram\n"
+                "Or use local chat now: python -m personal_agents.cli chat"
+            )
+        return
+
+    if args.command == "setup-telegram":
+        setup_telegram_interactive()
         return
 
     if args.command == "test-email":
@@ -88,7 +102,18 @@ def main() -> None:
         asyncio.run(run_workers(config))
         return
 
+    if args.command == "chat":
+        asyncio.run(run_local_chat(config))
+        return
+
     if args.command == "run-bot":
+        if not config.has_telegram:
+            print(
+                "TELEGRAM_BOT_TOKEN is missing.\n"
+                "Fix it with: python -m personal_agents.cli setup-telegram\n"
+                "Or continue locally with: python -m personal_agents.cli chat"
+            )
+            raise SystemExit(1)
         run_telegram_bot(config)
         return
 
