@@ -9,7 +9,9 @@ class AgentName(StrEnum):
     MAIN = "main"
     EMAIL = "email"
     RESEARCH = "research"
+    WEATHER = "weather"
     BUSINESS = "business"
+    PROJECTS = "projects"
 
 
 class TaskStatus(StrEnum):

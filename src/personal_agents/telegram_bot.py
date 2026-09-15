@@ -7,13 +7,25 @@ from datetime import UTC, datetime
 from personal_agents.agents.business_agent import BusinessAgent
 from personal_agents.agents.email_agent import EmailAgent
 from personal_agents.agents.orchestrator import MainAgent
+from personal_agents.agents.projects_agent import ProjectsAgent
 from personal_agents.agents.research_agent import ResearchAgent
+from personal_agents.agents.weather_agent import WeatherAgent
 from personal_agents.bus import AgentBus
 from personal_agents.config import AppConfig, format_config_status
 from personal_agents.models import AgentName
 
 
 LOGGER = logging.getLogger(__name__)
+
+
+def build_workers(*, bus: AgentBus, config: AppConfig) -> list:
+    return [
+        EmailAgent(bus=bus, config=config),
+        ResearchAgent(bus=bus, config=config),
+        WeatherAgent(bus=bus, config=config),
+        BusinessAgent(bus=bus, config=config),
+        ProjectsAgent(bus=bus, config=config),
+    ]
 
 
 def run_telegram_bot(config: AppConfig) -> None:
@@ -38,11 +50,7 @@ def run_telegram_bot(config: AppConfig) -> None:
     config.ensure_storage()
     bus = AgentBus(config.agents_db_path)
     main_agent = MainAgent(bus=bus, config=config)
-    workers = [
-        EmailAgent(bus=bus, config=config),
-        ResearchAgent(bus=bus, config=config),
-        BusinessAgent(bus=bus, config=config),
-    ]
+    workers = build_workers(bus=bus, config=config)
     notification_chat_id: dict[str, str | None] = {
         "value": config.telegram_allowed_chat_id
     }
@@ -71,13 +79,15 @@ def run_telegram_bot(config: AppConfig) -> None:
         await update.effective_message.reply_text(
             "\n".join(
                 [
-                    "Send me work and I will assign it to the right agent.",
+                    "I am your Main Agent. Send me work and I assign it to specialists,",
+                    "check the results, and bring everything back here.",
                     "",
                     "/agents - show specialists",
                     "/status - show recent tasks",
                     "/report - activity summary",
                     "/config - show setup status",
                     "/check_email - scan the inbox now",
+                    "/weather - weather for tomorrow, week, and month outlook",
                 ]
             )
         )
@@ -86,17 +96,7 @@ def run_telegram_bot(config: AppConfig) -> None:
         if await reject_if_needed(update):
             return
 
-        await update.effective_message.reply_text(
-            "\n".join(
-                [
-                    "Available agents:",
-                    "- Main Agent: talks with you here and manages work",
-                    "- Email Agent: watches assignments and deadlines",
-                    "- Research Agent: digs for information and sources",
-                    "- Business Agent: plans ideas, requirements, and actions",
-                ]
-            )
-        )
+        await update.effective_message.reply_text(agent_summary())
 
     async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if await reject_if_needed(update):
@@ -125,6 +125,17 @@ def run_telegram_bot(config: AppConfig) -> None:
             f"Email Agent assigned. Task: {task_id[:8]}"
         )
 
+    async def weather_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if await reject_if_needed(update):
+            return
+
+        extra = " ".join(context.args).strip() if context.args else ""
+        request = extra or "Weather forecast for tomorrow, this week, and this month"
+        task_id = main_agent.request_weather_forecast(request)
+        await update.effective_message.reply_text(
+            f"Weather Agent assigned. Task: {task_id[:8]}"
+        )
+
     async def user_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if await reject_if_needed(update):
             return
@@ -133,7 +144,7 @@ def run_telegram_bot(config: AppConfig) -> None:
         route, task_id = main_agent.delegate_user_message(text)
         await update.effective_message.reply_text(
             (
-                f"Assigned to {route.agent.value.title()} Agent.\n"
+                f"Assigned to {display_agent_name(route.agent)}.\n"
                 f"Task: {task_id[:8]}\n"
                 f"Reason: {route.reason}"
             )
@@ -171,6 +182,7 @@ def run_telegram_bot(config: AppConfig) -> None:
     application.add_handler(CommandHandler("report", report_command))
     application.add_handler(CommandHandler("config", config_command))
     application.add_handler(CommandHandler("check_email", check_email_command))
+    application.add_handler(CommandHandler("weather", weather_command))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, user_message))
 
     application.run_polling()
@@ -235,20 +247,31 @@ async def send_daily_report_if_due(
 async def run_workers(config: AppConfig) -> None:
     config.ensure_storage()
     bus = AgentBus(config.agents_db_path)
-    workers = [
-        EmailAgent(bus=bus, config=config),
-        ResearchAgent(bus=bus, config=config),
-        BusinessAgent(bus=bus, config=config),
-    ]
+    workers = build_workers(bus=bus, config=config)
     await asyncio.gather(*(worker.run_forever() for worker in workers))
+
+
+def display_agent_name(agent: AgentName) -> str:
+    labels = {
+        AgentName.MAIN: "Main Agent",
+        AgentName.EMAIL: "Email Agent",
+        AgentName.RESEARCH: "Study & Research Agent",
+        AgentName.WEATHER: "Weather Agent",
+        AgentName.BUSINESS: "Business Agent",
+        AgentName.PROJECTS: "Projects Agent",
+    }
+    return labels.get(agent, f"{agent.value.title()} Agent")
 
 
 def agent_summary() -> str:
     return "\n".join(
         [
-            f"{AgentName.MAIN.value}: Telegram commander and task manager",
-            f"{AgentName.EMAIL.value}: email assignment and deadline monitor",
-            f"{AgentName.RESEARCH.value}: deep information collector",
-            f"{AgentName.BUSINESS.value}: business ideas and operations planner",
+            "Available agents:",
+            "- Main Agent: Telegram commander; assigns work, checks quality, returns all results",
+            "- Email Agent: checks your inbox and extracts needed information",
+            "- Study & Research Agent: researches topics and helps with school assignments",
+            "- Weather Agent: tomorrow, weekly, and monthly outlook forecasts",
+            "- Business Agent: business ideas, plans, and operations help",
+            "- Projects Agent: personal and school project planning and execution",
         ]
     )

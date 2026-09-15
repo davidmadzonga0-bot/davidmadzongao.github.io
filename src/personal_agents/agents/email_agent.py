@@ -66,12 +66,12 @@ class EmailAgent(BaseAgent):
         if not findings:
             return {
                 "title": "Email Agent",
-                "summary": "I checked the inbox and did not find new assignment-style emails.",
+                "summary": "I checked the inbox and did not find new actionable emails.",
             }
 
         return {
             "title": "Email Agent",
-            "summary": f"I found {len(findings)} possible assignment email(s).",
+            "summary": f"I found {len(findings)} email(s) with needed information or action items.",
         }
 
     def notify_findings(self, findings: list[dict[str, str]]) -> None:
@@ -81,7 +81,7 @@ class EmailAgent(BaseAgent):
                 to_agent=AgentName.MAIN.value,
                 kind=MessageKind.NOTIFICATION.value,
                 body={
-                    "title": "Email assignment found",
+                    "title": "Email information found",
                     "detail": format_assignment_alert(finding),
                     "finding": finding,
                 },

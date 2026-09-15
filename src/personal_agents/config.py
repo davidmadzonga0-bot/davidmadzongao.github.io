@@ -44,6 +44,7 @@ class AppConfig:
     email_mark_seen: bool
     openai_api_key: str
     openai_model: str
+    default_weather_location: str
     agents_db_path: Path
     worker_poll_seconds: int
     daily_report_hour: int | None
@@ -98,6 +99,11 @@ def format_config_status(config: AppConfig) -> str:
                 config.has_llm,
                 "set OPENAI_API_KEY; OPENAI_MODEL defaults to gpt-4.1-mini",
             ),
+            line(
+                "Default weather location",
+                bool(config.default_weather_location),
+                "optional; set WEATHER_DEFAULT_LOCATION in .env",
+            ),
             f"- Daily report: {report_detail}",
             f"- Database: {config.agents_db_path}",
             f"- Worker poll: {config.worker_poll_seconds}s",
@@ -139,6 +145,7 @@ def load_config() -> AppConfig:
         email_mark_seen=_truthy(os.getenv("EMAIL_MARK_SEEN"), False),
         openai_api_key=openai_api_key,
         openai_model=openai_model,
+        default_weather_location=os.getenv("WEATHER_DEFAULT_LOCATION", "").strip(),
         agents_db_path=db_path,
         worker_poll_seconds=_integer(os.getenv("WORKER_POLL_SECONDS"), 3),
         daily_report_hour=daily_report_hour,

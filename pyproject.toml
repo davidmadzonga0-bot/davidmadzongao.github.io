@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "my-personal-agents"
 version = "0.1.0"
-description = "Telegram-led personal multi-agent system with email, research, and business workers."
+description = "Telegram-led personal multi-agent system for study, email, weather, business, and projects."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

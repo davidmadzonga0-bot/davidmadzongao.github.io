@@ -47,7 +47,7 @@ class ResearchAgent(BaseAgent):
             summary = format_research_without_llm(request, results, page_notes)
 
         return {
-            "title": "Research Agent Report",
+            "title": "Study & Research Agent Report",
             "summary": summary,
             "sources": sources,
         }
@@ -65,14 +65,17 @@ class ResearchAgent(BaseAgent):
         notes_block = "\n\n".join(page_notes)
         return self.llm.complete(
             system=(
-                "You are a careful research sub-agent. Produce concise, useful findings, "
-                "separate confirmed facts from recommendations, and mention uncertainty."
+                "You are a careful study and research sub-agent. Help with school assignments "
+                "and research questions. Produce clear explanations, solution approaches, "
+                "and concise findings. Separate facts from recommendations, mention uncertainty, "
+                "and support learning rather than opaque copy-paste answers."
             ),
             user=(
-                f"Research request:\n{request}\n\n"
+                f"Study/research request:\n{request}\n\n"
                 f"Search results:\n{source_block}\n\n"
                 f"Fetched page notes:\n{notes_block}\n\n"
-                "Return: key findings, practical implications, risks/gaps, and next steps."
+                "Return: key findings or solution steps, explanations, practical implications, "
+                "risks/gaps, sources to cite, and next study actions."
             ),
         )
 
